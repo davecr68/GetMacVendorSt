@@ -150,3 +150,79 @@ function Get-macVendorSt
 		}
 	}
 }
+
+function Get-OuiFileProcess
+{
+	[CmdletBinding()]
+	param (
+		[boolean]$ouiFile = $false,
+		[boolean]$processFile = $false
+	)
+	Process
+	{
+		$inPath = "$env:USERPROFILE\Documents\.bt.diamondip\oui.txt"
+		$outPath = "$env:USERPROFILE\Documents\.bt.diamondip\processed_oui.txt"
+		
+		if (!(Test-Path -Path $inPath -PathType Any))
+		{
+			#Write-Output "[WARN] The oui.txt file was not found. Attempting to download now ..."
+			Invoke-RestMethod -Method GET -Uri "http://standards-oui.ieee.org/oui.txt" -OutFile $inPath
+			
+		}
+		else
+		{
+			if ($ouiFile -eq $true)
+			{
+				#Write-Output "[WARN] The oui.txt file was not found. Attempting to download now ..."
+				rm $inPath
+				Invoke-RestMethod -Method GET -Uri "http://standards-oui.ieee.org/oui.txt" -OutFile $inPath
+			}
+		}
+		
+		if (Test-Path -Path $outPath -PathType any)
+		{
+			if ($processFile -eq $true)
+			{
+				rm -Path $outPath
+			}
+			
+		}
+		
+		$sr = New-Object -TypeName System.IO.StreamReader -ArgumentList $inPath
+		$sw = New-Object -TypeName System.IO.StreamWriter -ArgumentList $outPath
+		
+		$sw.WriteLine("OUI|VENDOR")
+		
+		
+		while ($sr.Peek() -gt 0)
+		{
+			$outline = @()
+			$line = $sr.ReadLine()
+			if ($line -match "base 16")
+			{
+				
+				$reg = '\b(\w*.\w*\w*.)\b'
+				
+				$found = $line -match $reg
+				
+				$myMatch = ""
+				$oui = ""
+				$rest = ""
+				$ouistr = ""
+				
+				If ($found)
+				{
+					$myMatch = [regex]::matches($line, $reg)
+					$oui = $myMatch[0]
+					$rest = $myMatch[2 .. $myMatch.Count] -join ""
+					$ouistr = "$oui|$rest"
+					#[System.io.file]::AppendAllText($processed,$ouistr)
+					$sw.WriteLine($ouistr)
+				}
+			}
+		}
+		
+		$sr.Dispose()
+		$sw.Dispose()
+	}
+}
