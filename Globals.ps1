@@ -130,10 +130,16 @@ function Get-macVendorSt
 		}
 		else
 		{
-			$_dir = "~\Documents\.bt.diamondip"
+			$_dir = "$env:USERPROFILE\Documents\.bt.diamondip"
 			$_outFile = "oui.txt"
 			$_path = "$_dir\$_outFile"
 			$_processed = "$_dir\processed_oui.txt"
+		}
+		
+		if (!(Test-Path -PathType Any $_dir))
+		{
+			New-Item -ItemType Directory -Force -Path $_dir
+			
 		}
 		
 		#If the users mac Address table does not exist, download and create it.
